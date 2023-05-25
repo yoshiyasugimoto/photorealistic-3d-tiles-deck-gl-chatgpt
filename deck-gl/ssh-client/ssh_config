@@ -1,0 +1,5 @@
+Host *
+  IdentityFile /run/secrets/ssh_identity_file
+  ServerAliveInterval 60
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
