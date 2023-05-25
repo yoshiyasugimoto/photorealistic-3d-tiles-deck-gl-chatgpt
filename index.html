@@ -23,13 +23,61 @@
         color: white;
         text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
       }
+
+      .chatpgt-form {
+        position: absolute;
+        top: 20%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 470px;
+        background: #ecbd00;
+        border-radius: 5px;
+        padding: 25px 25px 30px;
+        box-shadow: 8px 8px 10px rgba(0, 0, 0, 0.06);
+      }
+      .chatpgt-form h2 {
+        color: #353842;
+        font-size: 28px;
+        text-align: center;
+      }
+      .chatpgt-form textarea {
+        width: 95%;
+        height: 60px;
+        padding: 15px;
+        font-size: 16px;
+        margin-top: 20px;
+        border-radius: 5px;
+        max-height: 330px;
+        caret-color: #4671ea;
+        border: 1px solid #bfbfbf;
+      }
+      textarea::placeholder {
+        color: #b3b3b3;
+      }
+      textarea:is(:focus, :valid) {
+        padding: 14px;
+        border: 2px solid #ffcc00;
+      }
     </style>
   </head>
 
   <body>
     <div id="map"></div>
-    <div id="credits"></div>
+
+    <div class="chatpgt-form">
+      <h2>Web × Photorealistic 3D Titles</h2>
+      <textarea
+        type="text"
+        id="location"
+        name="location"
+        placeholder="表示したい場所"
+        required
+      ></textarea>
+    </div>
+
     <script>
+      const CHATGPT_API_KEY =
+        "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";
       const GOOGLE_API_KEY = "AIzaSyApH_tm000_uFeA-0_TfkVGr7bcqAO0ZAY";
       const TILESET_URL = `https://tile.googleapis.com/v1/3dtiles/root.json`;
       const creditsElement = document.getElementById("credits");
@@ -62,7 +110,7 @@
                 selectedTiles.forEach((tile) => {
                   const { copyright } = tile.content.gltf.asset;
                   copyright.split(";").forEach(credits.add, credits);
-                  creditsElement.innerHTML = [...credits].join("; ");
+                  //   creditsElement.innerHTML = [...credits].join("; ");
                 });
                 return selectedTiles;
               };
