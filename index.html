@@ -77,7 +77,78 @@
 
     <script>
       const CHATGPT_API_KEY =
-        "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";
+        "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";
+      const CHATGPT_URL = "https://api.openai.com/v1/chat/completions";
+
+      async function sendMessage(locationName) {
+        const response = await getChatCompletion(locationName);
+        console.log(response);
+      }
+
+      async function getChatCompletion(prompt) {
+        const data = {
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: `
+                
+
+                # 命令
+                あなたは指定された場所を推測して緯度経度高さ[m]を返答するChatbotとしてのロールプレイを行います。
+                以下の制約条件を厳密に守ってロールプレイを行ってください。 
+
+                ## 制約条件 
+                - JSON形式でのみ出力すること
+
+                ## Input Format:
+                user->$[location]
+
+                ## Output Format (in JSON):
+                assistant->{"latitude": $[緯度], "longitude": $[経度], "height": $[高さ]}
+
+                ## 会話例
+                Q1: user->西東京市のタワー
+                A1: assistant->{"latitude": 35.7202846, "longitude": 139.5306097, "height": 160}
+                Q2: user->思い出の場所
+                A2: assistant->{"latitude": 35.710889, "longitude": 139.796313, "height": 15}
+                `,
+            },
+            { role: "user", content: `user->${prompt}` },
+          ],
+        };
+
+        try {
+          const response = await fetch(CHATGPT_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${CHATGPT_API_KEY}`,
+            },
+            body: JSON.stringify(data),
+          });
+
+          const json = await response.json();
+          return json.choices[0].message.content;
+        } catch (error) {
+          console.error("Error:", error);
+          return "Oops, something went wrong!";
+        }
+      }
+
+      let locationName;
+      // TODO サニタイズ
+      window.document.onkeydown = async function (event) {
+        if (event.key === "Enter") {
+          const textarea = document.querySelector("textarea");
+          const textareaValue = textarea.value;
+          if (!textareaValue || locationName === textareaValue) return;
+          locationName = textareaValue;
+          textarea.blur();
+          await sendMessage(locationName);
+        }
+      };
+
       const GOOGLE_API_KEY = "AIzaSyApH_tm000_uFeA-0_TfkVGr7bcqAO0ZAY";
       const TILESET_URL = `https://tile.googleapis.com/v1/3dtiles/root.json`;
       const creditsElement = document.getElementById("credits");
