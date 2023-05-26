@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>deck.gl Photorealistic 3D Tiles example</title>
+    <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+
+      .chatpgt-form {
+        position: absolute;
+        top: 20%;
+        left: 5%;
+        transform: translate(0%, -50%);
+        width: 470px;
+        background: #ecbd00;
+        border-radius: 5px;
+        padding: 25px 25px 30px;
+        box-shadow: 8px 8px 10px rgba(0, 0, 0, 0.06);
+      }
+      .chatpgt-form h2 {
+        color: #353842;
+        font-size: 20px;
+        text-align: center;
+      }
+      .chatpgt-form input {
+        width: 95%;
+        height: 30px;
+        padding: 15px;
+        font-size: 16px;
+        margin-top: 20px;
+        border-radius: 5px;
+        max-height: 250px;
+        caret-color: #4671ea;
+        border: 1px solid #bfbfbf;
+      }
+      input::placeholder {
+        color: #b3b3b3;
+      }
+      input:is(:focus, :valid) {
+        padding: 14px;
+        border: 2px solid #ffcc00;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="map"></div>
+
+    <div class="chatpgt-form">
+      <h2>Web × Photorealistic 3D Titles</h2>
+      <input
+        type="text"
+        id="location"
+        name="location"
+        placeholder="表示したい場所"
+        required
+      ></input>
+    </div>
+
+    <script>
+      const CHATGPT_API_KEY =
+        "<API_KEY>";
+      const CHATGPT_URL = "https://api.openai.com/v1/chat/completions";
+
+      async function sendMessage(locationName) {
+        const response = await getChatCompletion(locationName);
+        return response
+      }
+
+      async function getChatCompletion(prompt) {
+        const data = {
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: `
+                # 命令
+                あなたは指定された場所を推測して緯度経度高さ[m]を返答するChatbotとしてのロールプレイを行います。
+                以下の制約条件を厳密に守ってロールプレイを行ってください。 
+
+                ## 制約条件 
+                - JSON形式でのみ出力すること
+
+                ## Input Format:
+                user->$[location]
+
+                ## Output Format (in JSON):
+                assistant->{"latitude": $[緯度], "longitude": $[経度], "height": $[高さ]}
+
+                ## 会話例
+                Q1: user->西東京市のタワー
+                A1: assistant->{"latitude": 35.7202846, "longitude": 139.5306097, "height": 160}
+                Q2: user->思い出の場所
+                A2: assistant->{"latitude": 35.710889, "longitude": 139.796313, "height": 15}
+                `,
+            },
+            { role: "user", content: `user->${prompt}` },
+          ],
+        };
+
+        try {
+          const response = await fetch(CHATGPT_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${CHATGPT_API_KEY}`,
+            },
+            body: JSON.stringify(data),
+          });
+
+          const json = await response.json();
+          return json.choices[0].message.content;
+        } catch (error) {
+          console.error("Error:", error);
+          const input = document.querySelector("input");
+          input.placeholder = "検索できませんでした。"
+          return "Oops, something went wrong!";
+        }
+      }
+
+      let locationName;
+      // TODO サニタイズ
+      window.document.onkeydown = async function (event) {
+        if (event.key === "Enter") {
+          const input = document.querySelector("input");
+          const inputValue = input.value;
+          if (!inputValue || locationName === inputValue) return;
+          locationName = inputValue;
+          input.disabled = true
+          const response = await sendMessage(locationName);
+          console.log(response);
+          try{
+            const {latitude, longitude, height} = JSON.parse(response.replace("assistant->", ""))
+            draw3dMap(latitude, longitude, height)  
+          }catch{
+            input.value = ""
+            input.placeholder = "場所を特定できませんでした"
+          }
+          input.disabled = false
+        }
+      };
+
+      const GOOGLE_API_KEY = "<API_KEY>";
+      const TILESET_URL = `https://tile.googleapis.com/v1/3dtiles/root.json`;
+      function draw3dMap(lat, lon, height){
+        new deck.DeckGL({
+        container: "map",
+        initialViewState: {
+          latitude: lat,
+          longitude: lon,
+          zoom: 16,
+          bearing: 90,
+          pitch: 60,
+          height: (height + 20)*5,
+        },
+        controller: { minZoom: 8 },
+        layers: [
+          new deck.Tile3DLayer({
+            id: "google-3d-tiles",
+            data: TILESET_URL,
+            loadOptions: {
+              fetch: {
+                headers: {
+                  "X-GOOG-API-KEY": "<API_KEY>",
+                },
+              },
+            },
+            onTilesetLoad: (tileset3d) => {
+              tileset3d.options.onTraversalComplete = (selectedTiles) => {
+                const credits = new Set();
+                selectedTiles.forEach((tile) => {
+                  const { copyright } = tile.content.gltf.asset;
+                  copyright.split(";").forEach(credits.add, credits);
+                });
+                return selectedTiles;
+              };
+            },
+          }),
+        ],
+      });
+      }
+      draw3dMap(35.6736926988029, 139.7586677640881, 0) // 初期描画
+    </script>
+  </body>
+</html>
