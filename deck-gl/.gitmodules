@@ -1,3 +1,0 @@
-[submodule "src/share"]
-	path = src/share
-	url = git@gitlab.churadata.okinawa:kddi/webxr/share.git

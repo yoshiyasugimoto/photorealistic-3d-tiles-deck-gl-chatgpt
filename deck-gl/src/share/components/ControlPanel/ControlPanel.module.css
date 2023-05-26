@@ -1,9 +1,0 @@
-.ControlPanel {
-  position: absolute;
-  top: 0.5em;
-  right: 0.5em;
-}
-
-.ControlPanel > * {
-  margin-bottom: 0.4em;
-}

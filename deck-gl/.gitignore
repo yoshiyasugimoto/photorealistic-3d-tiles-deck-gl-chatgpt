@@ -1,7 +1,0 @@
-node_modules
-dist
-docker-compose.development.env.yml
-docker-compose.production.env.yml
-*.zip
-.DS_Store
-.eslintcache

@@ -68,7 +68,7 @@
 
     <script>
       const CHATGPT_API_KEY =
-        "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";
+        "<API_KEY>";
       const CHATGPT_URL = "https://api.openai.com/v1/chat/completions";
 
       async function sendMessage(locationName) {
@@ -149,7 +149,7 @@
         }
       };
 
-      const GOOGLE_API_KEY = "AIzaSyApH_tm000_uFeA-0_TfkVGr7bcqAO0ZAY";
+      const GOOGLE_API_KEY = "<API_KEY>";
       const TILESET_URL = `https://tile.googleapis.com/v1/3dtiles/root.json`;
       function draw3dMap(lat, lon, height){
         new deck.DeckGL({
@@ -170,7 +170,7 @@
             loadOptions: {
               fetch: {
                 headers: {
-                  "X-GOOG-API-KEY": "AIzaSyApH_tm000_uFeA-0_TfkVGr7bcqAO0ZAY",
+                  "X-GOOG-API-KEY": "<API_KEY>",
                 },
               },
             },
