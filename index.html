@@ -14,21 +14,12 @@
         bottom: 0;
         width: 100%;
       }
-      #credits {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        padding: 2px;
-        font-size: 15px;
-        color: white;
-        text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
-      }
 
       .chatpgt-form {
         position: absolute;
         top: 20%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        left: 5%;
+        transform: translate(0%, -50%);
         width: 470px;
         background: #ecbd00;
         border-radius: 5px;
@@ -37,24 +28,24 @@
       }
       .chatpgt-form h2 {
         color: #353842;
-        font-size: 28px;
+        font-size: 20px;
         text-align: center;
       }
-      .chatpgt-form textarea {
+      .chatpgt-form input {
         width: 95%;
-        height: 60px;
+        height: 30px;
         padding: 15px;
         font-size: 16px;
         margin-top: 20px;
         border-radius: 5px;
-        max-height: 330px;
+        max-height: 250px;
         caret-color: #4671ea;
         border: 1px solid #bfbfbf;
       }
-      textarea::placeholder {
+      input::placeholder {
         color: #b3b3b3;
       }
-      textarea:is(:focus, :valid) {
+      input:is(:focus, :valid) {
         padding: 14px;
         border: 2px solid #ffcc00;
       }
@@ -66,13 +57,13 @@
 
     <div class="chatpgt-form">
       <h2>Web × Photorealistic 3D Titles</h2>
-      <textarea
+      <input
         type="text"
         id="location"
         name="location"
         placeholder="表示したい場所"
         required
-      ></textarea>
+      ></input>
     </div>
 
     <script>
@@ -82,7 +73,7 @@
 
       async function sendMessage(locationName) {
         const response = await getChatCompletion(locationName);
-        console.log(response);
+        return response
       }
 
       async function getChatCompletion(prompt) {
@@ -92,8 +83,6 @@
             {
               role: "system",
               content: `
-                
-
                 # 命令
                 あなたは指定された場所を推測して緯度経度高さ[m]を返答するChatbotとしてのロールプレイを行います。
                 以下の制約条件を厳密に守ってロールプレイを行ってください。 
@@ -132,6 +121,8 @@
           return json.choices[0].message.content;
         } catch (error) {
           console.error("Error:", error);
+          const input = document.querySelector("input");
+          input.placeholder = "検索できませんでした。"
           return "Oops, something went wrong!";
         }
       }
@@ -140,27 +131,36 @@
       // TODO サニタイズ
       window.document.onkeydown = async function (event) {
         if (event.key === "Enter") {
-          const textarea = document.querySelector("textarea");
-          const textareaValue = textarea.value;
-          if (!textareaValue || locationName === textareaValue) return;
-          locationName = textareaValue;
-          textarea.blur();
-          await sendMessage(locationName);
+          const input = document.querySelector("input");
+          const inputValue = input.value;
+          if (!inputValue || locationName === inputValue) return;
+          locationName = inputValue;
+          input.disabled = true
+          const response = await sendMessage(locationName);
+          console.log(response);
+          try{
+            const {latitude, longitude, height} = JSON.parse(response.replace("assistant->", ""))
+            draw3dMap(latitude, longitude, height)  
+          }catch{
+            input.value = ""
+            input.placeholder = "場所を特定できませんでした"
+          }
+          input.disabled = false
         }
       };
 
       const GOOGLE_API_KEY = "AIzaSyApH_tm000_uFeA-0_TfkVGr7bcqAO0ZAY";
       const TILESET_URL = `https://tile.googleapis.com/v1/3dtiles/root.json`;
-      const creditsElement = document.getElementById("credits");
-      new deck.DeckGL({
+      function draw3dMap(lat, lon, height){
+        new deck.DeckGL({
         container: "map",
         initialViewState: {
-          latitude: 35.6736926988029,
-          longitude: 139.7586677640881,
+          latitude: lat,
+          longitude: lon,
           zoom: 16,
           bearing: 90,
           pitch: 60,
-          height: 200,
+          height: (height + 20)*5,
         },
         controller: { minZoom: 8 },
         layers: [
@@ -175,13 +175,11 @@
               },
             },
             onTilesetLoad: (tileset3d) => {
-              console.log(tileset3d);
               tileset3d.options.onTraversalComplete = (selectedTiles) => {
                 const credits = new Set();
                 selectedTiles.forEach((tile) => {
                   const { copyright } = tile.content.gltf.asset;
                   copyright.split(";").forEach(credits.add, credits);
-                  //   creditsElement.innerHTML = [...credits].join("; ");
                 });
                 return selectedTiles;
               };
@@ -189,6 +187,8 @@
           }),
         ],
       });
+      }
+      draw3dMap(35.6736926988029, 139.7586677640881, 0) // 初期描画
     </script>
   </body>
 </html>
